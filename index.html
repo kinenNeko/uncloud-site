@@ -122,5 +122,29 @@ twikoo.init({
   document.getElementById("tcomment").innerHTML="<p style=\"color:#9a92ad;text-align:center;padding:24px\">留言板暂时加载不出来，晚点再来看看吧～</p>";
 });
 </script>
+<audio id="bgm" loop preload="auto" autoplay>
+  <source src="music/bgm.m4a" type="audio/mp4">
+</audio>
+<button id="bgmBtn" title="背景音乐">🎵</button>
+<script>
+(function(){
+  var a=document.getElementById("bgm");
+  a.volume=0.35;
+  var btn=document.getElementById("bgmBtn");
+  function ui(){btn.textContent=a.paused?"🎵":"⏸";}
+  function play(){var p=a.play();if(p&&p.catch)p.catch(function(){});}
+  play();
+  function kick(){play();["click","touchstart","keydown"].forEach(function(e){document.removeEventListener(e,kick);});}
+  ["click","touchstart","keydown"].forEach(function(e){document.addEventListener(e,kick,{passive:true});});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&a.paused)play();});
+  a.addEventListener("play",ui);a.addEventListener("pause",ui);
+  btn.addEventListener("click",function(ev){ev.stopPropagation();if(a.paused){play();}else{a.pause();}ui();});
+  ui();
+})();
+</script>
+<style>
+#bgmBtn{position:fixed;right:16px;bottom:16px;z-index:9999;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(24,20,34,.72);backdrop-filter:blur(8px);color:#e8e2f5;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+#bgmBtn:active{transform:scale(.94);}
+</style>
 </body>
 </html>
