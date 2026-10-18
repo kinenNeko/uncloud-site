@@ -27,8 +27,9 @@ export async function onRequestPost({ request }) {
     }
 
     const fd = new FormData();
-    const name = 'cat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (type.split('/')[1] ? '.' + type.split('/')[1].replace('jpeg', 'jpg') : '.png');
-    fd.append('file', new File([buf], name, { type }));
+    const ext = type.split('/')[1] ? type.split('/')[1].replace('jpeg', 'jpg') : 'png';
+    const name = 'cat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    fd.append('file', new Blob([buf], { type }), name);
 
     const res = await fetch('https://picui.cn/api/v1/upload', {
       method: 'POST',
