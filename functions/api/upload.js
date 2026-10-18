@@ -1,5 +1,5 @@
-// Cloudflare Pages Function: 图片上传到 R2
-export async function onRequestPost({ request, env }) {
+// Cloudflare Pages Function: 图片上传（转发到 Picui 免费图床，免注册免绑卡）
+export async function onRequestPost({ request }) {
   const cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -25,12 +25,30 @@ export async function onRequestPost({ request, env }) {
         status: 400, headers: { 'Content-Type': 'application/json', ...cors },
       });
     }
-    const ext = (type.split('/')[1] || 'png').replace('jpeg', 'jpg');
-    const name = 'img/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.' + ext;
-    await env.IMG_BUCKET.put(name, buf, { httpMetadata: { contentType: type } });
-    const url = 'https://img.uncloud.top/' + name;
-    return new Response(JSON.stringify({ success: true, url, data: { url } }), {
-      status: 200, headers: { 'Content-Type': 'application/json', ...cors },
+
+    const fd = new FormData();
+    const name = 'cat_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (type.split('/')[1] ? '.' + type.split('/')[1].replace('jpeg', 'jpg') : '.png');
+    fd.append('file', new File([buf], name, { type }));
+
+    const res = await fetch('https://picui.cn/api/v1/upload', {
+      method: 'POST',
+      body: fd,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36',
+        'Referer': 'https://picui.cn/',
+      },
+    });
+    const text = await res.text();
+    let j = null;
+    try { j = JSON.parse(text); } catch (e) {}
+    if (j && j.status && j.data && j.data.links && j.data.links.url) {
+      const url = j.data.links.url;
+      return new Response(JSON.stringify({ success: true, url, data: { url } }), {
+        status: 200, headers: { 'Content-Type': 'application/json', ...cors },
+      });
+    }
+    return new Response(JSON.stringify({ success: false, message: 'upstream failed', raw: text.slice(0, 300) }), {
+      status: 502, headers: { 'Content-Type': 'application/json', ...cors },
     });
   } catch (e) {
     return new Response(JSON.stringify({ success: false, message: String(e) }), {
