@@ -140,13 +140,19 @@ twikoo.init({
   a.autoplay = true;
   a.mozPreservesPitch = true;
   a.webkitPreservesPitch = true;
-  a.addEventListener("loadedmetadata", function(){
+  function lockRate(){
     try {
-      a.playbackRate = 1.0;
-      a.defaultPlaybackRate = 1.0;
+      if (a.playbackRate !== 1.0) a.playbackRate = 1.0;
+      if (a.defaultPlaybackRate !== 1.0) a.defaultPlaybackRate = 1.0;
       a.preservesPitch = true;
     } catch(e){}
-  });
+  }
+  var _play = a.play;
+  a.play = function(){ lockRate(); var p = _play.apply(a, arguments); lockRate(); return p; };
+  a.addEventListener("loadedmetadata", lockRate);
+  a.addEventListener("play", lockRate);
+  a.addEventListener("ratechange", lockRate);
+  a.addEventListener("timeupdate", function(){ if (a.playbackRate !== 1.0) lockRate(); });
   var btn = document.getElementById("bgmBtn");
   function ui(){ btn.style.opacity = a.paused ? "0.55" : "1"; btn.textContent = a.paused ? "♪" : "♫"; }
   function play(){ var p = a.play(); if (p && p.catch) p.catch(function(){}); }
