@@ -113,14 +113,21 @@ footer{text-align:center;color:#6f6885;font-size:11.5px;margin-top:44px;line-hei
 
 <script src="https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.min.js" onerror="var s=document.createElement('script');s.src='https://unpkg.com/twikoo@1.6.39/dist/twikoo.min.js';document.head.appendChild(s);"></script>
 <script>
-twikoo.init({
-  envId: "https://twikoo-server-n79u.vercel.app",
-  el: "#tcomment",
-  lang: "zh-CN"
-}).catch(function(e){
-  console.error("Twikoo load failed",e);
-  document.getElementById("tcomment").innerHTML="<p style=\"color:#9a92ad;text-align:center;padding:24px\">留言板暂时加载不出来，晚点再来看看吧～</p>";
-});
+var _tk=null;
+try {
+  _tk = twikoo.init({
+    envId: "https://twikoo-server-n79u.vercel.app",
+    el: "#tcomment",
+    lang: "zh-CN",
+    path: "/"
+  });
+  if (_tk && typeof _tk.catch === "function") {
+    _tk.catch(function(e){ console.error("Twikoo init failed", e); });
+  }
+} catch (e) {
+  console.error("Twikoo init exception", e);
+  document.getElementById("tcomment").innerHTML = "<p style="color:#9a92ad;text-align:center;padding:24px">留言板加载失败：" + (e && e.message ? e.message : e) + "</p>";
+}
 </script>
 <button id="bgmBtn" title="背景音乐" aria-label="背景音乐">♪</button>
 <script>
