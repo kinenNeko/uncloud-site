@@ -125,11 +125,27 @@ twikoo.init({
 <button id="bgmBtn" title="背景音乐" aria-label="背景音乐">♪</button>
 <script>
 (function(){
-  var a = new Audio();
-  a.src = "music/bgm.mp3";
+  var a = document.createElement("audio");
+  a.setAttribute("playsinline", "");
+  a.setAttribute("webkit-playsinline", "");
+  a.setAttribute("x5-playsinline", "");
+  a.setAttribute("x5-video-player-type", "h5-page");
+  a.src = "music/bgm.mp3?v=2";
   a.loop = true;
   a.preload = "auto";
   a.volume = 0.35;
+  a.playbackRate = 1.0;
+  a.defaultPlaybackRate = 1.0;
+  a.preservesPitch = true;
+  a.mozPreservesPitch = true;
+  a.webkitPreservesPitch = true;
+  a.addEventListener("loadedmetadata", function(){
+    try {
+      a.playbackRate = 1.0;
+      a.defaultPlaybackRate = 1.0;
+      a.preservesPitch = true;
+    } catch(e){}
+  });
   var btn = document.getElementById("bgmBtn");
   function ui(){ btn.style.opacity = a.paused ? "0.55" : "1"; btn.textContent = a.paused ? "♪" : "♫"; }
   function play(){ var p = a.play(); if (p && p.catch) p.catch(function(){}); }
