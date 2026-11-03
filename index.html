@@ -496,6 +496,49 @@ try {
     views[m2].style.display = (m2===0) ? "block" : "";
   }
   syncUI();
+
+  /* ===== 打字机 ===== */
+  function typewriter(el,lines,opt){
+    if(!el) return;
+    opt=opt||{};
+    var speed=opt.speed||75, hold=opt.hold||2200;
+    var idx=0, pos=0, deleting=false;
+    var cspan=document.createElement("span");
+    cspan.className="tw-cursor";
+    el.textContent="";
+    el.appendChild(cspan);
+    function render(t){
+      while(el.firstChild && el.firstChild!==cspan){ el.removeChild(el.firstChild); }
+      el.insertBefore(document.createTextNode(t), cspan);
+    }
+    function tick(){
+      var line=lines[idx];
+      if(!deleting){
+        pos++;
+        render(line.slice(0,pos));
+        if(pos>=line.length){
+          if(idx===lines.length-1 && lines.length===1){ return; }
+          deleting=true;
+          return setTimeout(tick,hold);
+        }
+        return setTimeout(tick, speed+Math.random()*40);
+      } else {
+        pos--;
+        render(line.slice(0,pos));
+        if(pos<=0){
+          deleting=false;
+          idx=(idx+1)%lines.length;
+          return setTimeout(tick,420);
+        }
+        return setTimeout(tick,32);
+      }
+    }
+    setTimeout(tick,400);
+  }
+  typewriter(document.getElementById("tw1"),[
+    "一个高三学生，也是一个在折腾 AI 的人",
+    "做点东西，然后写下来"
+  ],{speed:75,hold:2200});
 })();
 </script>
 </body></html>
