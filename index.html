@@ -15,7 +15,7 @@
 <meta property="og:title" content="给猫猫提建议 · uncloud">
 <meta property="og:description" content="收集关于猫猫（Cute_maomao）的建议与想法">
 <meta property="og:url" content="https://uncloud.top/">
-<meta property="og:image" content="https://uncloud.top/offline.webp">
+<meta property="og:image" content="https://uncloud.top/og.webp">
 <meta name="twitter:card" content="summary_large_image">
 <style>
 :root{--bg:#0f0d14;--bg-soft:#181522;--card:#1e1a2a;--card-hi:#252033;--line:#2e2740;--txt:#eae6f2;--txt-dim:#8f87a3;--pink:#ff7eb6;--purple:#a98bff;--cyan:#6bd5e1;--blue:#5b8dee}
@@ -572,25 +572,71 @@ try {
   var btn = document.getElementById('offRetry');
   if(!off) return;
 
-  function show(){ off.classList.add('show'); document.body.style.overflow='hidden'; }
-  function hide(){ off.classList.remove('show'); document.body.style.overflow=''; }
+  var shown = false;
+  function show(){ if(shown) return; shown = true; off.classList.add('show'); document.body.style.overflow='hidden'; }
+  function hide(){ if(!shown) return; shown = false; off.classList.remove('show'); document.body.style.overflow=''; }
+
+  // 主动探测：真正能不能连上服务器
+  var probing = false;
+  function probe(){
+    if(probing || !shown) return;
+    probing = true;
+    fetch('/favicon.ico?_=' + Date.now(), {cache:'no-store', method:'GET'})
+      .then(function(r){
+        if(r && r.ok){
+          show_ok = true;
+          // 网络恢复：如果当前是缓存版本，直接刷新拿真页面
+          if(window.__OFFLINE_CACHE__) { location.reload(); return; }
+          hide();
+        }
+      })
+      .catch(function(){})
+      .then(function(){ probing = false; });
+  }
+  var show_ok = false;
 
   // 浏览器上报断网
   window.addEventListener('offline', show);
+  window.addEventListener('online', function(){ probe(); });
   // 启动时如果已经断网
-  if(!navigator.onLine) setTimeout(show, 300);
+  if(!navigator.onLine) setTimeout(show, 200);
+
+  // Service Worker 在断网时会给 <head> 注入这个标记，这个最可靠
+  if(window.__OFFLINE_CACHE__){
+    show();
+  }
+
+  // 双保险：主动请求一个小文件，确认真的能连上服务器
+  // 不依赖 navigator.onLine，因为它经常骗人
+  (function boot(){
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ try{ctrl.abort();}catch(e){} }, 2500) : null;
+    var opt = {cache:'no-store'};
+    if(ctrl) opt.signal = ctrl.signal;
+    fetch('/favicon.ico?_boot=' + Date.now(), opt)
+      .then(function(r){
+        if(timer) clearTimeout(timer);
+        if(!r || !r.ok) show();
+        else if(!window.__OFFLINE_CACHE__) hide();
+      })
+      .catch(function(){
+        if(timer) clearTimeout(timer);
+        show();
+      });
+  })();
+
+  // 离线页显示时每 3 秒自动探测，网络一回来就自动消失
+  setInterval(probe, 3000);
 
   if(btn){
     btn.addEventListener('click', function(){
       btn.classList.add('trying');
-      // 探一个轻量请求，确认网络是否真的回来
-      var t = Date.now();
-      fetch('/favicon.ico?_=' + t, {cache:'no-store'})
-        .then(function(r){ return r.ok ? r : Promise.reject(); })
-        .then(function(){ hide(); location.reload(); })
+      fetch('/favicon.ico?_=' + Date.now(), {cache:'no-store'})
+        .then(function(r){
+          if(r && r.ok){ location.reload(); }
+          else { setTimeout(function(){ btn.classList.remove('trying'); }, 600); }
+        })
         .catch(function(){ setTimeout(function(){ btn.classList.remove('trying'); }, 600); });
-      // 兜底：3 秒还没结果就重新加载看看
-      setTimeout(function(){ if(btn.classList.contains('trying')) location.reload(); }, 3000);
     });
   }
 

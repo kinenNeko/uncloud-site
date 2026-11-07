@@ -1,10 +1,10 @@
 /* uncloud.top Service Worker
  * 策略：network-first + 缓存兜底
  * - 在线时永远拿最新版，不用手动改版本号
- * - 断网时从缓存返回，都没有就兜底 index.html
+ * - 断网时从缓存返回，并给 HTML 注入离线标记
  */
-const CACHE = 'uncloud-v1';
-const CORE = ['/', '/index.html', '/offline.webp', '/favicon.ico'];
+const CACHE = 'uncloud-v2';
+const CORE = ['/', '/index.html', '/offline.webp', '/og.webp', '/favicon.ico'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -24,12 +24,31 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
+// 在 HTML 的 <head> 里插一行标记，让页面立刻知道自己是缓存备份
+function markOffline(res) {
+  return res.text().then((html) => {
+    const injected = html.replace(
+      '</head>',
+      '<script>window.__OFFLINE_CACHE__=1;</script></head>'
+    );
+    return new Response(injected, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  });
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+
+  const isHTML =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
 
   e.respondWith(
     fetch(req)
@@ -42,10 +61,14 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() =>
         caches.match(req).then((hit) => {
-          if (hit) return hit;
-          // 页面请求兜底返回首页缓存
-          if (req.mode === 'navigate') {
-            return caches.match('/index.html').then((h) => h || caches.match('/'));
+          if (hit) {
+            return isHTML ? markOffline(hit) : hit;
+          }
+          if (isHTML) {
+            return caches.match('/index.html').then((h) => {
+              if (h) return markOffline(h);
+              return caches.match('/').then((r) => (r ? markOffline(r) : Response.error()));
+            });
           }
           return Response.error();
         })
