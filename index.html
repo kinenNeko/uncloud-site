@@ -435,10 +435,9 @@ try {
       if(c.delay > maxDelay) maxDelay = c.delay;
       (function(o){
         setTimeout(function(){
-          /* 从右往左切时贴纸水平镜像，避免方向突兀。
-             scaleX(-1) 会连带翻转旋转方向，乘上 scale 正好抵消 */
-          var _sx = (dir === 1) ? 1 : -1;
-          o.el.style.transform = "scaleX("+_sx+") rotate("+(_sx * o.rot)+"deg)";
+          /* 贴纸统一水平镜像：原图朝向本身是反的，两个方向都要翻。
+             scaleX(-1) 会连带翻转旋转方向，乘 -1 正好抵消 */
+          o.el.style.transform = "scaleX(-1) rotate("+(-o.rot)+"deg)";
           o.el.style.opacity = "1";
         }, o.delay);
       })(c);
