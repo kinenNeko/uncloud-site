@@ -435,7 +435,10 @@ try {
       if(c.delay > maxDelay) maxDelay = c.delay;
       (function(o){
         setTimeout(function(){
-          o.el.style.transform = "rotate("+o.rot+"deg)";
+          /* 从右往左切时贴纸水平镜像，避免方向突兀。
+             scaleX(-1) 会连带翻转旋转方向，乘上 scale 正好抵消 */
+          var _sx = (dir === 1) ? 1 : -1;
+          o.el.style.transform = "scaleX("+_sx+") rotate("+(_sx * o.rot)+"deg)";
           o.el.style.opacity = "1";
         }, o.delay);
       })(c);
