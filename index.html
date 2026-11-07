@@ -435,9 +435,10 @@ try {
       if(c.delay > maxDelay) maxDelay = c.delay;
       (function(o){
         setTimeout(function(){
-          /* 贴纸统一水平镜像：原图朝向本身是反的，两个方向都要翻。
+          /* 进入个人页（target=1）时贴纸水平镜像；回第一页保持原样。
              scaleX(-1) 会连带翻转旋转方向，乘 -1 正好抵消 */
-          o.el.style.transform = "scaleX(-1) rotate("+(-o.rot)+"deg)";
+          var _sx = (target === 1) ? -1 : 1;
+          o.el.style.transform = "scaleX("+_sx+") rotate("+(_sx * o.rot)+"deg)";
           o.el.style.opacity = "1";
         }, o.delay);
       })(c);
